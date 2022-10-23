@@ -7,6 +7,7 @@ import { CategoryModule } from './category/category.module';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
+import { PubSubModule } from './pub-sub/pub-sub.module';
 
 @Module({
   imports: [
@@ -16,6 +17,10 @@ import { AuthModule } from './auth/auth.module';
       sortSchema: true,
       debug: true,
       playground: true,
+      installSubscriptionHandlers: true,
+      subscriptions: {
+        'subscriptions-transport-ws': true,
+      },
     }),
     ConfigModule.forRoot({
       isGlobal: true,
@@ -27,6 +32,7 @@ import { AuthModule } from './auth/auth.module';
     ProductModule,
     CategoryModule,
     AuthModule,
+    PubSubModule,
   ],
 })
 export class AppModule {}

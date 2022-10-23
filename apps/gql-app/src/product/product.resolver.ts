@@ -1,15 +1,24 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Inject } from '@nestjs/common';
+import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
+import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { CurrentUser } from '../common/decorators/currentUserId.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { Pagination } from '../common/pagination/pagination';
+import { PUB_SUB } from '../pub-sub/pub-sub.module';
 import { User } from '../user/user.entity';
 import { CreateProductDto, UpdateProductDto } from './product.dto';
 import { Product } from './product.entity';
 import { ProductPagination } from './product.pagination';
 import { ProductService } from './product.service';
 
+const PRODUCT_CREATED_EVENT = 'productCreated';
+
 @Resolver(() => Product)
 export class ProductResolver {
-  constructor(private readonly productService: ProductService) {}
+  constructor(
+    private readonly productService: ProductService,
+    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
+  ) {}
 
   @Query(() => Product)
   getProductById(@Args('productId') productId: string): Promise<Product> {
@@ -29,11 +38,22 @@ export class ProductResolver {
   }
 
   @Mutation(() => Product)
-  createProduct(
+  async createProduct(
     @Args('product') product: CreateProductDto,
     @CurrentUser() currentUser: User,
   ): Promise<Product> {
-    return this.productService.create(product, currentUser);
+    const newProduct = await this.productService.create(product, currentUser);
+
+    this.pubSub.publish(PRODUCT_CREATED_EVENT, {
+      productCreated: newProduct,
+    });
+    return newProduct;
+  }
+
+  @Public()
+  @Subscription(() => Product)
+  productCreated() {
+    return this.pubSub.asyncIterator(PRODUCT_CREATED_EVENT);
   }
 
   @Mutation(() => Product)
