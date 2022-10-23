@@ -19,7 +19,11 @@ import { PubSubModule } from './pub-sub/pub-sub.module';
       playground: true,
       installSubscriptionHandlers: true,
       subscriptions: {
-        'subscriptions-transport-ws': true,
+        'subscriptions-transport-ws': {
+          onConnect: ({ authorization }: { authorization: string }) => {
+            return { req: { headers: { authorization } } };
+          },
+        },
       },
     }),
     ConfigModule.forRoot({
