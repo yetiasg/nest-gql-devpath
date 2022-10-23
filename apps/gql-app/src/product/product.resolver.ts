@@ -2,7 +2,6 @@ import { Inject } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { CurrentUser } from '../common/decorators/currentUserId.decorator';
-import { Public } from '../common/decorators/public.decorator';
 import { Pagination } from '../common/pagination/pagination';
 import { PUB_SUB } from '../pub-sub/pub-sub.module';
 import { User } from '../user/user.entity';
@@ -11,7 +10,11 @@ import { Product } from './product.entity';
 import { ProductPagination } from './product.pagination';
 import { ProductService } from './product.service';
 
-const PRODUCT_CREATED_EVENT = 'productCreated';
+enum PRODUCT_EVENT {
+  productCreated = 'productCreated',
+  productUpdated = 'productUpdated',
+  productDeleted = 'productDeleted',
+}
 
 @Resolver(() => Product)
 export class ProductResolver {
@@ -43,29 +46,45 @@ export class ProductResolver {
     @CurrentUser() currentUser: User,
   ): Promise<Product> {
     const newProduct = await this.productService.create(product, currentUser);
-
-    this.pubSub.publish(PRODUCT_CREATED_EVENT, {
+    this.pubSub.publish(PRODUCT_EVENT.productCreated, {
       productCreated: newProduct,
     });
     return newProduct;
   }
 
-  @Public()
-  @Subscription(() => Product)
-  productCreated() {
-    return this.pubSub.asyncIterator(PRODUCT_CREATED_EVENT);
-  }
-
   @Mutation(() => Product)
-  updateProduct(
+  async updateProduct(
     @Args('productId') productId: string,
     @Args('product') product: UpdateProductDto,
   ): Promise<Product> {
-    return this.productService.update(productId, product);
+    const updatedProduct = await this.productService.update(productId, product);
+    this.pubSub.publish(PRODUCT_EVENT.productUpdated, {
+      productUpdated: updatedProduct,
+    });
+    return updatedProduct;
   }
 
   @Mutation(() => Product)
-  deleteProduct(@Args('productId') productId: string): Promise<Product> {
-    return this.productService.delete(productId);
+  async deleteProduct(@Args('productId') productId: string): Promise<Product> {
+    const deletedProduct = await this.productService.delete(productId);
+    this.pubSub.publish(PRODUCT_EVENT.productDeleted, {
+      productDeleted: deletedProduct,
+    });
+    return deletedProduct;
+  }
+
+  @Subscription(() => Product)
+  productCreated() {
+    return this.pubSub.asyncIterator(PRODUCT_EVENT.productCreated);
+  }
+
+  @Subscription(() => Product)
+  productUpdated() {
+    return this.pubSub.asyncIterator(PRODUCT_EVENT.productUpdated);
+  }
+
+  @Subscription(() => Product)
+  productDeleted() {
+    return this.pubSub.asyncIterator(PRODUCT_EVENT.productDeleted);
   }
 }
