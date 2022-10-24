@@ -12,15 +12,15 @@ import { UniqueUsername } from './validation/unique-username.validator';
 
 @InputType()
 export class CreateUserDto extends PartialType(User) {
-  @Field()
+  @Field({ nullable: true })
   @IsString()
-  @IsNotEmpty()
-  readonly firstName: string;
+  @IsOptional()
+  readonly firstName?: string;
 
-  @Field()
+  @Field({ nullable: true })
   @IsString()
-  @IsNotEmpty()
-  readonly lastName: string;
+  @IsOptional()
+  readonly lastName?: string;
 
   @Field()
   @IsEmail()
