@@ -1,16 +1,32 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Pagination } from '../common/pagination/pagination';
 import { In, Repository } from 'typeorm';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 import { UserPagination } from './user.pagination';
 import { User } from './user.entity';
+import { ConfigService } from '@nestjs/config';
+import { Role } from '../role/role.type';
 
 @Injectable()
-export class UserService {
+export class UserService implements OnModuleInit {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    private readonly configService: ConfigService,
   ) {}
+
+  async onModuleInit(): Promise<User> {
+    const users = await this.userRepository.find();
+    if (users.length > 0) return null;
+
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
+    const newAdmin = await this.create({
+      email: adminEmail,
+      role: Role.ADMIN,
+    });
+
+    return newAdmin;
+  }
 
   async getOneById(userId: string): Promise<User> {
     return this.userRepository.findOne({
@@ -41,6 +57,14 @@ export class UserService {
     return this.userRepository.findOne({
       where: {
         username,
+      },
+    });
+  }
+
+  getOneByEmail(email: string): Promise<User> {
+    return this.userRepository.findOne({
+      where: {
+        email,
       },
     });
   }
