@@ -20,17 +20,20 @@ export class ProductSubscriptionResolver {
   }
 
   @Subscription(() => Product, {
-    filter: (payload, variables) => {
-      return String(payload.productUpdated.id) === String(variables.productId);
-    },
+    filter: (payload, variables) =>
+      String(payload.productUpdated.id) === String(variables.productId),
   })
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   productUpdated(@Args('productId') productId: string) {
     return this.pubSub.asyncIterator(PRODUCT_EVENT.productUpdated);
   }
 
-  @Subscription(() => Product)
-  productDeleted() {
+  @Subscription(() => Product, {
+    filter: (payload, variables) =>
+      String(payload.productUpdated.id) === String(variables.productId),
+  })
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  productDeleted(@Args('productId') productId: string) {
     return this.pubSub.asyncIterator(PRODUCT_EVENT.productDeleted);
   }
 }
