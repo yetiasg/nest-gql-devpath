@@ -5,7 +5,6 @@ import { User } from '../user/user.entity';
 import { Repository } from 'typeorm';
 import { CreateProductDto, UpdateProductDto } from './product.dto';
 import { Product } from './product.entity';
-import { ProductLoader } from './product.loader';
 import { ProductPagination } from './product.pagination';
 
 @Injectable()
@@ -13,7 +12,6 @@ export class ProductService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
-    private readonly productLoader: ProductLoader,
   ) {}
 
   getById(productId: string): Promise<Product> {
@@ -23,7 +21,7 @@ export class ProductService {
       },
       relations: {
         categories: true,
-        user: true,
+        author: true,
       },
     });
   }
@@ -32,7 +30,7 @@ export class ProductService {
     return this.productRepository.find({
       relations: {
         categories: true,
-        user: true,
+        author: true,
       },
     });
   }
@@ -45,7 +43,7 @@ export class ProductService {
     const products = await this.productRepository.find({
       relations: {
         categories: true,
-        user: true,
+        author: true,
       },
       take: limit,
       skip: offset,
@@ -57,8 +55,8 @@ export class ProductService {
     };
   }
 
-  async create(product: CreateProductDto, user: User): Promise<Product> {
-    const newUser = this.productRepository.create({ ...product, user });
+  async create(product: CreateProductDto, author: User): Promise<Product> {
+    const newUser = this.productRepository.create({ ...product, author });
     return this.productRepository.save(newUser);
   }
 

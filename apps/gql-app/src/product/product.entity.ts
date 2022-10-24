@@ -35,5 +35,5 @@ export class Product {
   @ManyToOne(() => User, (creator: User) => creator.products, {
     nullable: true,
   })
-  readonly user: User;
+  readonly author: User;
 }

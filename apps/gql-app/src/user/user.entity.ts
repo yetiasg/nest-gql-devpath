@@ -39,7 +39,7 @@ export class User {
   readonly role: Role;
 
   @Field(() => [Product], { nullable: true })
-  @OneToMany(() => Product, (product: Product) => product.user, {
+  @OneToMany(() => Product, (product: Product) => product.author, {
     nullable: true,
   })
   readonly products: Product[];
