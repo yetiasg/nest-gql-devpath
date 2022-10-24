@@ -11,7 +11,7 @@ import { UniqueUsernameConstraint } from './validation/unique-username.validator
 @Module({
   controllers: [UserController],
   providers: [UserService, UserLoader, UserResolver, UniqueUsernameConstraint],
-  exports: [UserService],
+  exports: [UserService, UserLoader],
   imports: [
     TypeOrmModule.forFeature([User]),
     ClientsModule.register([
