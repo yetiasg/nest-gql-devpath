@@ -36,12 +36,23 @@ export class AuthService {
       sub: externalId,
     } = await this.fetchUserProfile(token, payload);
 
+    const userByEmail = await this.userService.getOneByEmail(email);
+
+    if (userByEmail) {
+      return this.userService.update(userByEmail.id, {
+        externalId,
+        firstName,
+        lastName,
+        isActive: true,
+      });
+    }
+
     const newUser = await this.userService.create({
       externalId,
       email,
       firstName,
       lastName,
-      role: Role.ADMIN,
+      role: Role.CUSTOMER,
       isActive: true,
     });
 
