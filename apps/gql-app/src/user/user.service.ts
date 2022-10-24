@@ -1,9 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Pagination } from '../common/pagination/pagination';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
-import { UserLoader } from './user.loader';
 import { UserPagination } from './user.pagination';
 import { User } from './user.entity';
 
@@ -11,7 +10,6 @@ import { User } from './user.entity';
 export class UserService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-    private readonly userLoader: UserLoader,
   ) {}
 
   async getOneById(userId: string): Promise<User> {
@@ -22,6 +20,12 @@ export class UserService {
       relations: {
         products: true,
       },
+    });
+  }
+
+  getByIds(ids: string[]): Promise<User[]> {
+    return this.userRepository.find({
+      where: { id: In(ids) },
     });
   }
 
