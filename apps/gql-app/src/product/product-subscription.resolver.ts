@@ -1,5 +1,5 @@
 import { Inject } from '@nestjs/common';
-import { Resolver, Subscription } from '@nestjs/graphql';
+import { Args, Resolver, Subscription } from '@nestjs/graphql';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { PUB_SUB } from '../pub-sub/pub-sub.module';
 import { Product } from './product.entity';
@@ -19,8 +19,13 @@ export class ProductSubscriptionResolver {
     return this.pubSub.asyncIterator(PRODUCT_EVENT.productCreated);
   }
 
-  @Subscription(() => Product)
-  productUpdated() {
+  @Subscription(() => Product, {
+    filter: (payload, variables) => {
+      return String(payload.productUpdated.id) === String(variables.productId);
+    },
+  })
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  productUpdated(@Args('productId') productId: string) {
     return this.pubSub.asyncIterator(PRODUCT_EVENT.productUpdated);
   }
 
