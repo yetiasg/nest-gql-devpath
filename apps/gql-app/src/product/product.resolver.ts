@@ -1,26 +1,30 @@
 import { Inject } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
+import {
+  Args,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { CurrentUser } from '../common/decorators/currentUserId.decorator';
 import { Pagination } from '../common/pagination/pagination';
 import { PUB_SUB } from '../pub-sub/pub-sub.module';
 import { User } from '../user/user.entity';
+import { UserLoader } from '../user/user.loader';
+import { PRODUCT_EVENT } from './product-subscription.resolver';
 import { CreateProductDto, UpdateProductDto } from './product.dto';
 import { Product } from './product.entity';
 import { ProductPagination } from './product.pagination';
 import { ProductService } from './product.service';
 
-enum PRODUCT_EVENT {
-  productCreated = 'productCreated',
-  productUpdated = 'productUpdated',
-  productDeleted = 'productDeleted',
-}
-
 @Resolver(() => Product)
 export class ProductResolver {
   constructor(
-    private readonly productService: ProductService,
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
+    private readonly productService: ProductService,
+    private readonly userLoader: UserLoader,
   ) {}
 
   @Query(() => Product)
@@ -73,18 +77,9 @@ export class ProductResolver {
     return deletedProduct;
   }
 
-  @Subscription(() => Product)
-  productCreated() {
-    return this.pubSub.asyncIterator(PRODUCT_EVENT.productCreated);
-  }
-
-  @Subscription(() => Product)
-  productUpdated() {
-    return this.pubSub.asyncIterator(PRODUCT_EVENT.productUpdated);
-  }
-
-  @Subscription(() => Product)
-  productDeleted() {
-    return this.pubSub.asyncIterator(PRODUCT_EVENT.productDeleted);
+  @ResolveField('author', () => User)
+  async getAuthor(@Parent() product: Product) {
+    const authorId = product.author.id;
+    return this.userLoader.batchAuthors.load(authorId);
   }
 }
