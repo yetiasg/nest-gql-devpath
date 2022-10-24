@@ -22,4 +22,5 @@ export const makeConnectionConfig = (
   migrations: [path.join(__dirname, 'migrations/*.{j,t}s')],
   namingStrategy: new SnakeNamingStrategy(),
   synchronize: true,
+  logging: true,
 });
